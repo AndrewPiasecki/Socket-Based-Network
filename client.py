@@ -6,14 +6,13 @@ import time
 
 HOST = 'localhost'  
 PORT = 3300
-BUFFER_SIZE = 1024
+BUFFER_SIZE = 5000 * 1024
 
 
 def connect_to_server():
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         client_socket.connect((HOST, PORT))
-        print("Connected to the server.")
         return client_socket
     except Exception as e:
         print(f"Failed to connect to the server: {e}")
@@ -47,102 +46,103 @@ def upload_file(client_socket, file_path):
     with open(file_path, 'rb') as file:
         while chunk := file.read(BUFFER_SIZE):
             client_socket.sendall(chunk)
-    print("File uploaded successfully.")
+    print("\n---------------------------\nFile uploaded successfully.\n---------------------------")
 
 def download_file(client_socket, file_name):
-    # Send download request to the server
+    # send download request to the server
     send_message(client_socket, f"DOWNLOAD {file_name}")
     
-    # Receive the server's response (either the file size or an error)
+    # receive server's response
     response = receive_message(client_socket)
     
     if response.startswith("ERROR"):
-        # If the response is an error, print and return
         print(f"Server response: {response}")
         return
-    
-    # At this point, we expect the response to be the file size (as a string)
+
     try:
-        file_size = int(response)  # Try to parse the file size
+        file_size = int(response) # Try to parse the file size
     except ValueError:
-        # If the response is not a valid number, print the error and return
+        # logic for invalid number
         print(f"Unexpected server response: {response}")
         return
     
-    # Now, proceed with downloading the file
     with open(file_name, 'wb') as file:
         received = 0
         while received < file_size:
             chunk = client_socket.recv(BUFFER_SIZE)
             if not chunk:
-                break  # If no data is received, exit
+                break # exit
             file.write(chunk)
             received += len(chunk)
     
-    print(f"File {file_name} downloaded successfully.")
+    print(f"\n---------------------------\nFile {file_name} downloaded successfully.\n---------------------------")
 
+# delete function
 def delete_file(client_socket, file_name):
     send_message(client_socket, f"DELETE {file_name}")
     response = receive_message(client_socket)
     print(f"Server response: {response}")
 
-#DIR
+# directory function
 def list_directory(client_socket):
     send_message(client_socket, "DIR")
     response = receive_message(client_socket)
-    print(f"Files and directories:\n{response}")
+    print(f"\n\n---------------------------\nFiles and directories:\n---------------------------\n{response}\n---------------------------\n")
 
-#create or delete a subfolder
+# create or delete subfolder function
 def manage_subfolder(client_socket, action, path):
     send_message(client_socket, f"SUBFOLDER {action} {path}")
     response = receive_message(client_socket)
     print(f"Server response: {response}")
 
 def main():
-    print("File Sharing Client")
+    # attempt connection
+    client_socket = connect_to_server()
+    if not client_socket:
+        print("Failed to connect to the server. Exiting.")
+        return  # exit if connection fails
+
+    print("Connected to the server.") 
     while True:
-        print("\nOptions:")
+        print("\n---------------------------")
+        print("File Sharing Client")
+        print("---------------------------\nOptions:")
         print("1. Upload a file")
         print("2. Download a file")
         print("3. Delete a file")
         print("4. List directory")
         print("5. Create/Delete subfolder")
-        print("6. Quit")
+        print("6. Quit\n---------------------------")
         choice = input("Enter your choice: ")
 
         if choice == "6":
             print("Exiting")
             break
 
-        client_socket = connect_to_server()
-        if not client_socket:
-            continue
-          # skips if connection fails
-
-        if choice == "1": #upload
+        if choice == "1":  # upload
             file_path = input("Enter the file path to upload: ")
             upload_file(client_socket, file_path)
-          
-        elif choice == "2": #download
+
+        elif choice == "2":  # download
             file_name = input("Enter the file name to download: ")
             download_file(client_socket, file_name)
-          
-        elif choice == "3": #delete
+
+        elif choice == "3":  # delete
             file_name = input("Enter the file name to delete: ")
             delete_file(client_socket, file_name)
-          
-        elif choice == "4": #list
+
+        elif choice == "4":  # list
             list_directory(client_socket)
-          
-        elif choice == "5": #create/delete subfolder
+
+        elif choice == "5":  # create/delete subfolder
             action = input("Enter 'create' or 'delete': ")
             path = input("Enter the path/directory: ")
             manage_subfolder(client_socket, action, path)
-          
-        else: #oopsies
+
+        else:  # invalid option
             print("Invalid choice. Please try again.")
-        
-        client_socket.close()
+
+    client_socket.close()
 
 if __name__ == "__main__":
     main()

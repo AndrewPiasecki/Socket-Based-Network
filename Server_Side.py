@@ -24,17 +24,17 @@ def handle_upload(conn, data):
 def handle_download(conn, data):
     _, file_name = data.split()
     
-    # Construct the file path and check if it exists
+    # construct file path and check if it exists
     file_path = os.path.join(BASE_DIR, file_name)
     if not os.path.exists(file_path):
         conn.sendall(f"ERROR File {file_name} not found.".encode('utf-8'))
         return
     
-    # Send the file size to the client
+    # send file size to the client
     file_size = os.path.getsize(file_path)
-    conn.sendall(f"{file_size}".encode('utf-8'))  # Send the file size as a string
+    conn.sendall(f"{file_size}".encode('utf-8'))  # send file size as a string
     
-    # Send the file content in chunks
+    # send file content in chunks
     with open(file_path, 'rb') as file:
         while chunk := file.read(BUFFER_SIZE):
             conn.sendall(chunk)
