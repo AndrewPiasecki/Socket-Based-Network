@@ -19,8 +19,10 @@ class NetworkAnalysis:
           
 # Log Transfer
     def logTransfer(self, action, file_name, file_size, transfer_time):
-       
+        
         data_rate = file_size / transfer_time if transfer_time > 0 else 0
+
+        
         new_entry = pd.DataFrame([{
             'Action': action,
             'File': file_name,
@@ -28,7 +30,15 @@ class NetworkAnalysis:
             'Transfer Time (s)': transfer_time,
             'Data Rate (bytes/s)': data_rate
         }])
-        self.stats = pd.concat([self.stats, new_entry], ignore_index=True)
+
+        
+        if self.stats.empty:
+            
+            self.stats = new_entry
+        else:
+            
+            self.stats = pd.concat([self.stats, new_entry], ignore_index=True)
+
 
   # Saving
     def save(self):
