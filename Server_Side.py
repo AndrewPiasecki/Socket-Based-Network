@@ -53,7 +53,10 @@ def handle_delete(conn, data):
 
 def handle_list_directory(conn):
     files = os.listdir(BASE_DIR)
-    conn.sendall("\n".join(files).encode('utf-8'))
+    if files:
+        conn.sendall("\n".join(files).encode('utf-8'))
+    else:
+        conn.sendall("ERROR No files found.".encode('utf-8'))
 
 
 def handle_subfolder(conn, data):
