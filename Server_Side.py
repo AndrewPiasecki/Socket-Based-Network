@@ -1,16 +1,17 @@
 import socket
 import os
+import threading
 from time import time
 from network_analysis import NetworkAnalysis
 
-HOST = 'localhost'
+HOST = '0.0.0.0'
 PORT = 3300
 BUFFER_SIZE = 5000 * 1024
 BASE_DIR = './server_files'
 
 
-network_analysis = NetworkAnalysis()  # NA
-network_analysis.initialize()  # NA
+network_analysis = NetworkAnalysis()  
+network_analysis.initialize()  
 
 def handle_upload(conn, data):
     _, file_name, file_size = data.split()
@@ -26,8 +27,7 @@ def handle_upload(conn, data):
     transfer_time = time() - start_time
     network_analysis.logTransfer("UPLOAD", file_name, file_size, transfer_time)
     print(f"File {file_name} uploaded successfully.")
-    network_analysis.displaySummary() #NA
-
+    network_analysis.displaySummary()
 
 
 def handle_download(conn, data):
@@ -46,7 +46,7 @@ def handle_download(conn, data):
     transfer_time = time() - start_time
     network_analysis.logTransfer("DOWNLOAD", file_name, file_size, transfer_time)
     print(f"File {file_name} downloaded successfully.")
-    network_analysis.displaySummary() #NA
+    network_analysis.displaySummary()
 
 
 def handle_delete(conn, data):
@@ -54,11 +54,11 @@ def handle_delete(conn, data):
     file_path = os.path.join(BASE_DIR, file_name)
     if os.path.exists(file_path):
         os.remove(file_path)
-        network_analysis.logTransfer("DELETE", file_name, 0, 0)  # Log the delete action
+        network_analysis.logTransfer("DELETE", file_name, 0, 0)
         conn.sendall(f"File {file_name} deleted successfully.".encode('utf-8'))
     else:
         conn.sendall(f"ERROR File {file_name} not found.".encode('utf-8'))
-    network_analysis.displaySummary() #NA
+    network_analysis.displaySummary()
 
 
 def handle_list_directory(conn):
@@ -68,8 +68,8 @@ def handle_list_directory(conn):
     else:
         conn.sendall("ERROR No files found.".encode('utf-8'))
 
-    network_analysis.logTransfer("LIST_DIR", "N/A", 0, 0) #NA
-    network_analysis.displaySummary() #NA
+    network_analysis.logTransfer("LIST_DIR", "N/A", 0, 0)
+    network_analysis.displaySummary()
 
 
 def handle_subfolder(conn, data):
@@ -83,12 +83,11 @@ def handle_subfolder(conn, data):
         if os.path.isdir(full_path):
             os.rmdir(full_path)
             conn.sendall(f"Subfolder {path} deleted.".encode('utf-8'))
-            network_analysis.logTransfer("SUBFOLDER_DELETE", path, 0, 0) #NA
+            network_analysis.logTransfer("SUBFOLDER_DELETE", path, 0, 0)
         else:
             conn.sendall(f"ERROR Subfolder {path} not found.".encode('utf-8'))
 
     network_analysis.displaySummary()
-
 
 
 def handle_client(conn):
@@ -113,8 +112,7 @@ def handle_client(conn):
         print(f"Error with client: {e}")
     finally:
         conn.close()
-        
-        network_analysis.save()  # NA
+        network_analysis.save()
 
 
 def main():
@@ -129,13 +127,14 @@ def main():
         while True:
             conn, addr = server_socket.accept()
             print(f"Connected by {addr}")
-            handle_client(conn)
+            client_thread = threading.Thread(target=handle_client, args=(conn,))
+            client_thread.start()
     except KeyboardInterrupt:
         print("Server shutting down...")
     finally:
-        network_analysis.save() #NA
-        network_analysis.displaySummary()   #NA
-        server_socket.close() #NA
+        network_analysis.save() 
+        network_analysis.displaySummary()  
+        server_socket.close()
 
 
 if __name__ == "__main__":
