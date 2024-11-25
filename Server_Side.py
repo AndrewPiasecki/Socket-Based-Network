@@ -67,7 +67,7 @@ def handle_list_directory(conn):
         conn.sendall("\n".join(files).encode('utf-8'))
     else:
         conn.sendall("ERROR No files found.".encode('utf-8'))
-
+        
     network_analysis.logTransfer("LIST_DIR", "N/A", 0, 0)
     network_analysis.displaySummary()
 
